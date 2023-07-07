@@ -1,1 +1,1 @@
-myTextFilemyTextFile God is great
+myString

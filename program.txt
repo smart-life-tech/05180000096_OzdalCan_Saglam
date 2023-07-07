@@ -1,2 +1,1 @@
-input myString prompt "Enter a string:";
-write myString to outputFile;
+write myStrings to outputFile;

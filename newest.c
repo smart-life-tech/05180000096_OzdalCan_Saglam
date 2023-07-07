@@ -454,6 +454,7 @@ void executeTextJediProgram(const char *filename)
                     // Write to file
                     // Token varToken = getNextToken(file); // Get variable token
                     Token varToken = getNextTokenFromLine(line, &position); // Get variable token
+                                                                            // printf(varToken.lexeme);
                     if (varToken.type != TOKEN_IDENTIFIER)
                     {
                         printf("Syntax Error: Expected identifier after 'write'.\n");
@@ -464,8 +465,9 @@ void executeTextJediProgram(const char *filename)
                     strcat(filename, ".txt"); // Assume text file extension
 
                     // Token contentToken = getNextToken(file); // Get content token
-                   Token contentToken = getNextTokenFromLine(line, &position); // Get variable token
-                    /* 
+                    Token contentToken = varToken; // getNextTokenFromLine(line, &position); // Get variable token
+
+                    /*
                     if (contentToken.type != TOKEN_IDENTIFIER )
                     {
                         printf("Syntax Error: Expected identifier or string after 'write'.\n");
@@ -481,11 +483,12 @@ void executeTextJediProgram(const char *filename)
                         // returns a string with the identifier as its value
                         char content[MAX_STRING_SIZE];
                         strcpy(content, contentToken.lexeme);
-
+                        printf(contentToken.lexeme);
                         writeStringToFile(filename, content);
                     }
                     else if (contentToken.type == TOKEN_STRING)
                     {
+                        printf(contentToken.lexeme);
                         writeStringToFile(filename, contentToken.lexeme);
                     }
 
