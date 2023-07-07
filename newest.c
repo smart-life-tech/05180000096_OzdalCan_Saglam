@@ -140,6 +140,7 @@ Token getNextTokenFromLine(const char *line, int *position)
     // If none of the above cases matched, it's an error token
     token.type = TOKEN_ERROR;
     strcpy(token.lexeme, "ERROR");
+    (*position) += strlen(token.lexeme); // Update the position
     return token;
 }
 
