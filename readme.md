@@ -4,7 +4,7 @@ To provide instructions on how to use your TextJedi interpreter and provide a cl
 
 The TextJedi Interpreter is a program that allows you to run TextJedi programs and execute TextJedi code. This README provides instructions on how to use the interpreter and run TextJedi programs.
 
-## Installation
+## Installation of the compiler
 
 1. Clone the repository to your local machine:
 
