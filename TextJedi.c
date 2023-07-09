@@ -416,6 +416,7 @@ void executeTextJediProgram(const char *filename)
 
     while (fgets(line, sizeof(line), file))
     {
+        // printf(line);
         int position = 0;
 
         while (line[position] != '\0')
@@ -427,13 +428,16 @@ void executeTextJediProgram(const char *filename)
                 printf("Syntax Error: Unknown token '%s'\n", token.lexeme);
                 break;
             }
+            printf("%s\n", token.lexeme);
 
             if (token.type == TOKEN_KEYWORD)
             {
+                printf(line);
                 if (strcmp(token.lexeme, "read") == 0)
                 {
                     // Read from file
                     Token varToken = getNextTokenFromLine(line, &position); // Get variable token
+
                     if (varToken.type != TOKEN_IDENTIFIER)
                     {
                         printf("Syntax Error: Expected identifier after 'read'.\n");
@@ -451,49 +455,112 @@ void executeTextJediProgram(const char *filename)
 
                 else if (strcmp(token.lexeme, "write") == 0)
                 {
-                    // Write to file
-                    // Token varToken = getNextToken(file); // Get variable token
-                    Token varToken = getNextTokenFromLine(line, &position); // Get variable token
-                                                                            // printf(varToken.lexeme);
-                    if (varToken.type != TOKEN_IDENTIFIER)
-                    {
-                        printf("Syntax Error: Expected identifier after 'write'.\n");
-                        break;
-                    }
-                    char filename[MAX_BUFFER_SIZE];
-                    strcpy(filename, varToken.lexeme);
-                    strcat(filename, ".txt"); // Assume text file extension
+                    // char line[MAX_LINE_SIZE];
+                    // char *myStrings[MAX_BUFFER_SIZE]="";      // Assuming myStrings is declared and initialized elsewhere
+                    char outputFilename[MAX_BUFFER_SIZE]; // To store the output file name
 
-                    // Token contentToken = getNextToken(file); // Get content token
-                    Token contentToken = varToken; // getNextTokenFromLine(line, &position); // Get variable token
-
-                    /*
-                    if (contentToken.type != TOKEN_IDENTIFIER )
+                    while (1)
                     {
-                        printf("Syntax Error: Expected identifier or string after 'write'.\n");
-                        break;
-                    }
-                    */
-                    if (contentToken.type == TOKEN_IDENTIFIER)
-                    {
-                        // Resolve identifier to its value
-                        // ... perform necessary lookup
+                        // Tokenize line by space
+                        // printf(line);
+                        char *token = strtok(line, " ");
 
-                        // For demonstration purposes, assuming variable lookup
-                        // returns a string with the identifier as its value
-                        char content[MAX_STRING_SIZE];
-                        strcpy(content, contentToken.lexeme);
-                        printf(contentToken.lexeme);
-                        writeStringToFile(filename, content);
-                    }
-                    else if (contentToken.type == TOKEN_STRING)
-                    {
-                        printf(contentToken.lexeme);
-                        writeStringToFile(filename, contentToken.lexeme);
-                    }
+                        if (token != NULL && strcmp(token, "write") == 0)
+                        {
+                            printf("writing...");
+                            // Process write operation
 
+                            char *myStrings = strtok(NULL, " "); // Get the variable name to write
+                            printf(myStrings);
+                            token = strtok(NULL, " "); // Get the variable name to write
+                            if (token != NULL && strcmp(token, "to") == 0)
+                            {
+                                printf("to...");
+                                // printf(token);
+                                token = strtok(NULL, " "); // Get the output file name
+                                printf(token);
+                                if (token != NULL)
+                                {
+                                    size_t length = strlen(token);
+                                    if (token[length - 1] == '\n')
+                                    {
+                                        token[length - 1] = '\0'; // Remove the newline character
+                                    }
+                                    if (token[length - 2] == ';')
+                                    {
+                                        token[length - 2] = '\0'; // Remove the semicolon
+                                    }
+                                    strcpy(outputFilename, token);
+                                    strcat(outputFilename, ".txt"); // Append .txt extension
+
+                                    FILE *outputFile = fopen(outputFilename, "w");
+                                    if (outputFile != NULL)
+                                    {
+                                        // Write the myStrings variable content to the output file
+                                        fprintf(outputFile, "%s", myStrings);
+
+                                        fclose(outputFile);
+                                        printf("Successfully written to %s\n", outputFilename);
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        printf("Failed to open output file: %s\n", outputFilename);
+                                        break;
+                                    }
+                                }
+                                else
+                                {
+                                    printf("Syntax Error: Expected output file name after 'to'.\n");
+                                }
+                            }
+                            else
+                            {
+                                printf("Syntax Error: Expected 'to' keyword after variable name.\n");
+                                break;
+                            }
+                        }
+                    }
+                    /* while (1)
+                     {
+                         // Write to file
+                         // Token varToken = getNextToken(file); // Get variable token
+                         Token varToken = getNextTokenFromLine(line, &position); // Get variable token
+                         printf(line);                                           // printf(varToken.lexeme);
+                         printToken(varToken);
+                         if (varToken.type != TOKEN_IDENTIFIER || varToken.type != TOKEN_KEYWORD)
+                         {
+                             printf("Syntax Error: Expected identifier after 'write'.\n");
+                             break;
+                         }
+                         char filename[MAX_BUFFER_SIZE];
+                         strcpy(filename, varToken.lexeme);
+                         strcat(filename, ".txt"); // Assume text file extension
+
+                         // Token contentToken = getNextToken(file); // Get content token
+                         Token contentToken = varToken; // getNextTokenFromLine(line, &position); // Get variable token
+
+                         if (contentToken.type == TOKEN_IDENTIFIER)
+                         {
+                             // Resolve identifier to its value
+                             // ... perform necessary lookup
+
+                             // For demonstration purposes, assuming variable lookup
+                             // returns a string with the identifier as its value
+                             char content[MAX_STRING_SIZE];
+                             strcpy(content, contentToken.lexeme);
+                             printf(contentToken.lexeme);
+                             writeStringToFile(filename, content);
+                         }
+                         else if (contentToken.type == TOKEN_STRING)
+                         {
+                             printf(contentToken.lexeme);
+                             writeStringToFile(filename, contentToken.lexeme);
+                         }
+ */
                     printf("Successfully wrote to file: %s\n", filename);
                 }
+
                 else if (strcmp(token.lexeme, "input") == 0)
                 {
                     // Take user input

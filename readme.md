@@ -9,7 +9,7 @@ The TextJedi Interpreter is a program that allows you to run TextJedi programs a
 1. Clone the repository to your local machine:
 
    ```shell
-   git clone https://github.com/ysmart-life-tech/textjedi-interpreter.git
+   git clone https://github.com/smart-life-tech/jediCompiler.git
    ```
 
 2. Compile the source code using a C compiler:
