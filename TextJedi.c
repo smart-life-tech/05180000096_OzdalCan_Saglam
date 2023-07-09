@@ -475,6 +475,7 @@ void executeTextJediProgram(const char *filename)
                             token = strtok(NULL, " "); // Get the variable name to write
                             if (token != NULL && strcmp(token, "to") == 0)
                             {
+                                
                                 printf("to...");
                                 // printf(token);
                                 token = strtok(NULL, " "); // Get the output file name

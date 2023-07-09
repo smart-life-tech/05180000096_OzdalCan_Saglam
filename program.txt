@@ -1,1 +1,1 @@
-write myStrings to outputFile;
+write myStringst to outputFile;
