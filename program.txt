@@ -1,1 +1,3 @@
-write myStringst to outputFile;
+new text myString;
+myString := " Hello,TextJedi! hhhh ";
+output myString;

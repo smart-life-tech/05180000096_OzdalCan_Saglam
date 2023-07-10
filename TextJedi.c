@@ -1,405 +1,78 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ctype.h>
 
-#define MAX_IDENTIFIER_SIZE 30
-#define MAX_INTEGER_SIZE 10
-#define MAX_STRING_SIZE 1000
-#define MAX_BUFFER_SIZE 100
-#define MAX_LINE_SIZE 1000
-#define MAX_LEXEME_SIZE 1000
-typedef enum
-{
-    TOKEN_IDENTIFIER,
-    TOKEN_INTEGER,
-    TOKEN_STRING,
-    TOKEN_OPERATOR,
-    TOKEN_KEYWORD,
-    TOKEN_END_OF_LINE,
-    TOKEN_COMMENT,
-    TOKEN_ERROR
-} TokenType;
+#define MAX_BUFFER_SIZE 256
+#define MAX_LINE_SIZE 1024
 
 typedef struct
 {
-    TokenType type;
-    char lexeme[MAX_IDENTIFIER_SIZE + 1];
+    enum
+    {
+        TOKEN_KEYWORD,
+        TOKEN_IDENTIFIER,
+        TOKEN_STRING,
+        TOKEN_INTEGER,
+        TOKEN_END_OF_LINE
+    } type;
+    char lexeme[MAX_BUFFER_SIZE];
 } Token;
-
-int isKeyword(const char *identifier)
-{
-    const char *keywords[] = {
-        "new", "int", "text", "size", "subs", "locate", "insert", "override",
-        "read", "write", "from", "to", "input", "output", "asText", "asString"};
-    int numKeywords = sizeof(keywords) / sizeof(keywords[0]);
-
-    for (int i = 0; i < numKeywords; ++i)
-    {
-        if (strcmp(identifier, keywords[i]) == 0)
-        {
-            return 1;
-        }
-    }
-
-    return 0;
-}
-
-Token getNextTokenFromLine(const char *line, int *position)
-{
-    Token token;
-    const int lineLength = strlen(line);
-    const int start = *position;
-
-    // Skip whitespace characters
-    while (*position < lineLength && isspace(line[*position]))
-        (*position)++;
-
-    // Check for end of line or end of string
-    if (*position >= lineLength || line[*position] == '\0')
-    {
-        token.type = TOKEN_END_OF_LINE;
-        strcpy(token.lexeme, ";"); // Set the end-of-line token lexeme to ";"
-        return token;
-    }
-
-    // Handle identifier or keyword
-    if (isalpha(line[*position]) || line[*position] == '_')
-    {
-        int i = 0;
-        token.lexeme[i++] = line[*position];
-
-        (*position)++;
-
-        while (*position < lineLength && (isalnum(line[*position]) || line[*position] == '_'))
-        {
-            if (i < MAX_LEXEME_SIZE - 1)
-                token.lexeme[i++] = line[*position];
-            (*position)++;
-        }
-
-        token.lexeme[i] = '\0';
-
-        if (isKeyword(token.lexeme))
-            token.type = TOKEN_KEYWORD;
-        else
-            token.type = TOKEN_IDENTIFIER;
-
-        return token;
-    }
-
-    // Handle integer constant
-    if (isdigit(line[*position]))
-    {
-        int i = 0;
-        while (*position < lineLength && isdigit(line[*position]))
-        {
-            if (i < MAX_LEXEME_SIZE - 1)
-                token.lexeme[i++] = line[*position];
-            (*position)++;
-        }
-        token.lexeme[i] = '\0';
-        token.type = TOKEN_INTEGER;
-        return token;
-    }
-
-    // Handle string constant
-    if (line[*position] == '"')
-    {
-        int i = 0;
-        token.lexeme[i++] = line[*position];
-
-        (*position)++;
-
-        while (*position < lineLength && line[*position] != '\0' && line[*position] != '"')
-        {
-            if (i < MAX_LEXEME_SIZE - 1)
-                token.lexeme[i++] = line[*position];
-            (*position)++;
-        }
-
-        if (line[*position] == '"')
-        {
-            token.lexeme[i++] = line[*position];
-            (*position)++;
-            token.lexeme[i] = '\0';
-            token.type = TOKEN_STRING;
-        }
-        else
-        {
-            token.lexeme[i] = '\0';
-            token.type = TOKEN_ERROR; // Unterminated string constant
-        }
-
-        return token;
-    }
-
-    // Handle other cases: operators, etc.
-    // ...
-
-    // If none of the above cases matched, it's an error token
-    token.type = TOKEN_ERROR;
-    strcpy(token.lexeme, "ERROR");
-    (*position) += strlen(token.lexeme); // Update the position
-    return token;
-}
-
-void printToken(Token token)
-{
-    switch (token.type)
-    {
-    case TOKEN_IDENTIFIER:
-        printf("Identifier: %s\n", token.lexeme);
-        break;
-    case TOKEN_INTEGER:
-        printf("Integer: %s\n", token.lexeme);
-        break;
-    case TOKEN_STRING:
-        printf("String: %s\n", token.lexeme);
-        break;
-    case TOKEN_OPERATOR:
-        printf("Operator: %s\n", token.lexeme);
-        break;
-    case TOKEN_KEYWORD:
-        printf("Keyword: %s\n", token.lexeme);
-        break;
-    case TOKEN_END_OF_LINE:
-        printf("End of Line\n");
-        break;
-    case TOKEN_COMMENT:
-        printf("Comment\n");
-        break;
-    case TOKEN_ERROR:
-        printf("Lexical Error\n");
-        break;
-    default:
-        break;
-    }
-}
 
 Token getNextToken(FILE *file)
 {
     Token token;
+    char buffer[MAX_BUFFER_SIZE];
 
-    token.lexeme[0] = '\0';
-
-    int ch = fgetc(file);
-
-    // Skip whitespaces
-    while (isspace(ch))
+    if (fscanf(file, "%s", buffer) == 1)
     {
-        ch = fgetc(file);
-    }
-
-    if (ch == EOF)
-    {
-        token.type = TOKEN_END_OF_LINE;
-        return token;
-    }
-
-    if (isalpha(ch) || ch == '_')
-    {
-        // Identifier or keyword
-        int i = 0;
-        while (isalnum(ch) || ch == '_')
-        {
-            if (i < MAX_IDENTIFIER_SIZE)
-            {
-                token.lexeme[i++] = ch;
-            }
-            else
-            {
-                token.type = TOKEN_ERROR;
-                return token;
-            }
-            ch = fgetc(file);
-        }
-        token.lexeme[i] = '\0';
-
-        if (isKeyword(token.lexeme))
+        if (strcmp(buffer, "new") == 0)
         {
             token.type = TOKEN_KEYWORD;
+            strcpy(token.lexeme, buffer);
+        }
+        else if (strcmp(buffer, "text") == 0 || strcmp(buffer, "int") == 0)
+        {
+            token.type = TOKEN_KEYWORD;
+            strcpy(token.lexeme, buffer);
+        }
+        else if (strcmp(buffer, "output") == 0 || strcmp(buffer, "asString") == 0)
+        {
+            token.type = TOKEN_KEYWORD;
+            strcpy(token.lexeme, buffer);
+        }
+        else if (strcmp(buffer, ":=") == 0)
+        {
+            token.type = TOKEN_KEYWORD;
+            strcpy(token.lexeme, buffer);
+        }
+        else if (strcmp(buffer, ";") == 0)
+        {
+            token.type = TOKEN_END_OF_LINE;
+            strcpy(token.lexeme, buffer);
+        }
+        else if (buffer[0] == '"')
+        {
+            token.type = TOKEN_STRING;
+            strcpy(token.lexeme, buffer);
+        }
+        else if (atoi(buffer) != 0 || strcmp(buffer, "0") == 0)
+        {
+            token.type = TOKEN_INTEGER;
+            strcpy(token.lexeme, buffer);
         }
         else
         {
             token.type = TOKEN_IDENTIFIER;
-        }
-
-        ungetc(ch, file);
-    }
-    else if (isdigit(ch))
-    {
-        // Integer constant
-        int i = 0;
-        while (isdigit(ch))
-        {
-            if (i < MAX_INTEGER_SIZE)
-            {
-                token.lexeme[i++] = ch;
-            }
-            else
-            {
-                token.type = TOKEN_ERROR;
-                return token;
-            }
-            ch = fgetc(file);
-        }
-        token.lexeme[i] = '\0';
-
-        token.type = TOKEN_INTEGER;
-        ungetc(ch, file);
-    }
-    else if (ch == '"')
-    {
-        // String constant
-        int i = 0;
-        ch = fgetc(file);
-
-        while (ch != '"' && ch != EOF)
-        {
-            if (i < MAX_STRING_SIZE)
-            {
-                token.lexeme[i++] = ch;
-            }
-            else
-            {
-                token.type = TOKEN_ERROR;
-                return token;
-            }
-            ch = fgetc(file);
-        }
-
-        if (ch == EOF)
-        {
-            token.type = TOKEN_ERROR;
-            return token;
-        }
-
-        token.lexeme[i] = '\0';
-        token.type = TOKEN_STRING;
-    }
-    else if (ch == '+' || ch == '-' || ch == ':')
-    {
-        // Operator
-        token.lexeme[0] = ch;
-        token.lexeme[1] = '\0';
-        token.type = TOKEN_OPERATOR;
-    }
-    else if (ch == ';')
-    {
-        // End of line
-        token.lexeme[0] = ch;
-        token.lexeme[1] = '\0';
-        token.type = TOKEN_END_OF_LINE;
-    }
-    else if (ch == '/')
-    {
-        // Comment or operator
-        token.lexeme[0] = ch;
-        ch = fgetc(file);
-
-        if (ch == '*')
-        {
-            // Comment
-            int commentClosed = 0;
-            while (!commentClosed && ch != EOF)
-            {
-                ch = fgetc(file);
-                if (ch == '*')
-                {
-                    ch = fgetc(file);
-                    if (ch == '/')
-                    {
-                        commentClosed = 1;
-                    }
-                }
-            }
-
-            if (!commentClosed)
-            {
-                token.type = TOKEN_ERROR;
-                return token;
-            }
-
-            token.type = TOKEN_COMMENT;
-        }
-        else
-        {
-            // Operator
-            ungetc(ch, file);
-            token.lexeme[1] = '\0';
-            token.type = TOKEN_OPERATOR;
+            strcpy(token.lexeme, buffer);
         }
     }
     else
     {
-        // Invalid character
-        token.type = TOKEN_ERROR;
+        token.type = TOKEN_END_OF_LINE;
+        strcpy(token.lexeme, "");
     }
 
     return token;
-}
-
-void readStringFromFile(const char *filename, char *output)
-{
-    FILE *file = fopen(filename, "r");
-    if (file == NULL)
-    {
-        printf("Failed to open file: %s\n", filename);
-        return;
-    }
-
-    char ch;
-    int i = 0;
-
-    while ((ch = fgetc(file)) != EOF)
-    {
-        if (i < MAX_STRING_SIZE - 1)
-        {
-            output[i++] = ch;
-        }
-        else
-        {
-            printf("File content exceeds maximum string size.\n");
-            break;
-        }
-    }
-
-    output[i] = '\0';
-
-    fclose(file);
-}
-
-void writeStringToFile(const char *filename, const char *content)
-{
-    FILE *file = fopen(filename, "w");
-    if (file == NULL)
-    {
-        printf("Failed to open file: %s\n", filename);
-        return;
-    }
-
-    fprintf(file, "%s", content);
-
-    fclose(file);
-}
-
-void getInputFromUser(const char *prompt, char *input)
-{
-    printf("%s: ", prompt);
-    fgets(input, MAX_BUFFER_SIZE, stdin);
-
-    // Remove newline character if present
-    size_t len = strlen(input);
-    if (len > 0 && input[len - 1] == '\n')
-    {
-        input[len - 1] = '\0';
-    }
-}
-
-void outputText(const char *text)
-{
-    printf("%s\n", text);
 }
 
 void executeTextJediProgram(const char *filename)
@@ -412,217 +85,92 @@ void executeTextJediProgram(const char *filename)
     }
 
     char line[MAX_LINE_SIZE];
-    Token token;
+    char myString[MAX_BUFFER_SIZE];
+    int myNumber;
 
     while (fgets(line, sizeof(line), file))
     {
-        // printf(line);
-        int position = 0;
+        // Remove the newline character from the line
+        line[strcspn(line, "\n")] = '\0';
 
-        while (line[position] != '\0')
+        char *token = strtok(line, " ");
+
+        if (token != NULL)
         {
-            token = getNextTokenFromLine(line, &position);
-
-            if (token.type == TOKEN_ERROR)
+            if (strcmp(token, "new") == 0)
             {
-                printf("Syntax Error: Unknown token '%s'\n", token.lexeme);
-                break;
-            }
-            printf("%s\n", token.lexeme);
+                // Process new variable declaration
+                token = strtok(NULL, " ");         // Get variable type
+                char *varName = strtok(NULL, " "); // Get variable name
 
-            if (token.type == TOKEN_KEYWORD)
-            {
-                printf(line);
-                if (strcmp(token.lexeme, "read") == 0)
+                if (token != NULL && varName != NULL)
                 {
-                    // Read from file
-                    Token varToken = getNextTokenFromLine(line, &position); // Get variable token
-
-                    if (varToken.type != TOKEN_IDENTIFIER)
+                    if (strcmp(token, "text") == 0)
                     {
-                        printf("Syntax Error: Expected identifier after 'read'.\n");
-                        break;
+                        // Text variable
+                        strcpy(myString, "");
+                        printf("New text variable created: %s\n", varName);
                     }
-                    char filename[MAX_BUFFER_SIZE];
-                    strcpy(filename, varToken.lexeme);
-                    strcat(filename, ".txt"); // Assume text file extension
-
-                    char content[MAX_STRING_SIZE];
-                    readStringFromFile(filename, content);
-
-                    printf("%s = \"%s\"\n", varToken.lexeme, content);
-                }
-
-                else if (strcmp(token.lexeme, "write") == 0)
-                {
-                    // char line[MAX_LINE_SIZE];
-                    // char *myStrings[MAX_BUFFER_SIZE]="";      // Assuming myStrings is declared and initialized elsewhere
-                    char outputFilename[MAX_BUFFER_SIZE]; // To store the output file name
-
-                    while (1)
+                    else if (strcmp(token, "int") == 0)
                     {
-                        // Tokenize line by space
-                        // printf(line);
-                        char *token = strtok(line, " ");
-
-                        if (token != NULL && strcmp(token, "write") == 0)
-                        {
-                            printf("writing...");
-                            // Process write operation
-
-                            char *myStrings = strtok(NULL, " "); // Get the variable name to write
-                            printf(myStrings);
-                            token = strtok(NULL, " "); // Get the variable name to write
-                            if (token != NULL && strcmp(token, "to") == 0)
-                            {
-                                
-                                printf("to...");
-                                // printf(token);
-                                token = strtok(NULL, " "); // Get the output file name
-                                printf(token);
-                                if (token != NULL)
-                                {
-                                    size_t length = strlen(token);
-                                    if (token[length - 1] == '\n')
-                                    {
-                                        token[length - 1] = '\0'; // Remove the newline character
-                                    }
-                                    if (token[length - 2] == ';')
-                                    {
-                                        token[length - 2] = '\0'; // Remove the semicolon
-                                    }
-                                    strcpy(outputFilename, token);
-                                    strcat(outputFilename, ".txt"); // Append .txt extension
-
-                                    FILE *outputFile = fopen(outputFilename, "w");
-                                    if (outputFile != NULL)
-                                    {
-                                        // Write the myStrings variable content to the output file
-                                        fprintf(outputFile, "%s", myStrings);
-
-                                        fclose(outputFile);
-                                        printf("Successfully written to %s\n", outputFilename);
-                                        break;
-                                    }
-                                    else
-                                    {
-                                        printf("Failed to open output file: %s\n", outputFilename);
-                                        break;
-                                    }
-                                }
-                                else
-                                {
-                                    printf("Syntax Error: Expected output file name after 'to'.\n");
-                                }
-                            }
-                            else
-                            {
-                                printf("Syntax Error: Expected 'to' keyword after variable name.\n");
-                                break;
-                            }
-                        }
+                        // Integer variable
+                        myNumber = 0;
+                        printf("New int variable created: %s\n", varName);
                     }
-                    /* while (1)
-                     {
-                         // Write to file
-                         // Token varToken = getNextToken(file); // Get variable token
-                         Token varToken = getNextTokenFromLine(line, &position); // Get variable token
-                         printf(line);                                           // printf(varToken.lexeme);
-                         printToken(varToken);
-                         if (varToken.type != TOKEN_IDENTIFIER || varToken.type != TOKEN_KEYWORD)
-                         {
-                             printf("Syntax Error: Expected identifier after 'write'.\n");
-                             break;
-                         }
-                         char filename[MAX_BUFFER_SIZE];
-                         strcpy(filename, varToken.lexeme);
-                         strcat(filename, ".txt"); // Assume text file extension
-
-                         // Token contentToken = getNextToken(file); // Get content token
-                         Token contentToken = varToken; // getNextTokenFromLine(line, &position); // Get variable token
-
-                         if (contentToken.type == TOKEN_IDENTIFIER)
-                         {
-                             // Resolve identifier to its value
-                             // ... perform necessary lookup
-
-                             // For demonstration purposes, assuming variable lookup
-                             // returns a string with the identifier as its value
-                             char content[MAX_STRING_SIZE];
-                             strcpy(content, contentToken.lexeme);
-                             printf(contentToken.lexeme);
-                             writeStringToFile(filename, content);
-                         }
-                         else if (contentToken.type == TOKEN_STRING)
-                         {
-                             printf(contentToken.lexeme);
-                             writeStringToFile(filename, contentToken.lexeme);
-                         }
- */
-                    printf("Successfully wrote to file: %s\n", filename);
-                }
-
-                else if (strcmp(token.lexeme, "input") == 0)
-                {
-                    // Take user input
-                    //  Token varToken = getNextToken(file); // Get variable token
-                    Token varToken = getNextTokenFromLine(line, &position); // Get variable token
-                    if (varToken.type != TOKEN_IDENTIFIER)
+                    else
                     {
-                        printf("Syntax Error: Expected identifier after 'input'.\n");
-                        break;
+                        printf("Syntax Error: Unknown variable type '%s'\n", token);
                     }
-                    char prompt[MAX_BUFFER_SIZE];
-                    strcpy(prompt, varToken.lexeme);
-
-                    char input[MAX_BUFFER_SIZE];
-                    getInputFromUser(prompt, input);
-
-                    printf("%s = \"%s\"\n", varToken.lexeme, input);
-                }
-                else if (strcmp(token.lexeme, "output") == 0)
-                {
-                    // Output text
-                    Token varToken = getNextToken(file); // Get variable token
-                    if (varToken.type != TOKEN_IDENTIFIER)
-                    {
-                        printf("Syntax Error: Expected identifier after 'output'.\n");
-                        break;
-                    }
-
-                    // Resolve identifier to its value
-                    // ... perform necessary lookup
-
-                    // For demonstration purposes, assuming variable lookup
-                    // returns a string with the identifier as its value
-                    char output[MAX_STRING_SIZE];
-                    strcpy(output, varToken.lexeme);
-
-                    outputText(output);
                 }
                 else
                 {
-                    printf("Syntax Error: Unknown keyword '%s'\n", token.lexeme);
-                    break;
+                    printf("Syntax Error: Expected variable type and name after 'new'\n");
                 }
+            }
+            else if (strcmp(token, "myString") == 0)
+            {
+                // Process myString assignment
+                token = strtok(NULL, " "); // Get assignment operator
+
+                if (token != NULL && strcmp(token, ":=") == 0)
+                {
+                    token = strtok(NULL, "\""); // Get string value between quotation marks
+
+                    if (token != NULL)
+                    {
+                        strcpy(myString, token);
+                    }
+                    else
+                    {
+                        printf("Syntax Error: Expected string value after ':='\n");
+                    }
+                }
+                else
+                {
+                    printf("Syntax Error: Expected ':=' after variable name\n");
+                }
+            }
+            else if (strcmp(token, "output") == 0)
+            {
+                // Process output operation
+                printf("Output: %s\n", myString);
             }
         }
     }
+
     fclose(file);
 }
+
 int main(int argc, char *argv[])
 {
     if (argc < 2)
     {
-        printf("Usage: TextJediInterpreter.exe <filename>\n");
-        // Wait for user input before exiting
-        getchar();
+        printf("Usage: %s <program_file>\n", argv[0]);
         return 1;
     }
 
-    const char *filename = argv[1];
-
-    executeTextJediProgram(filename);
+    const char *programFile = argv[1];
+    executeTextJediProgram(programFile);
 
     return 0;
 }
